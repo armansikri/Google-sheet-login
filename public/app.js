@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000/api'; // new server lene par yaha address dalna hoga
+const API_BASE = 'https://google-sheet-login.onrender.com/api'; // new server lene par yaha address dalna hoga
 
 const loginCard = document.getElementById('loginCard');
 const editCard = document.getElementById('editCard');
