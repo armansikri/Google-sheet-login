@@ -3,16 +3,35 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const path = require('path');
 const { google } = require('googleapis');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+//  Serve "public" folder (VERY IMPORTANT)
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Google Sheets config
 const SHEET_ID = process.env.SHEET_ID;
 
 const auth = new google.auth.GoogleAuth({
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  // ⭐ Render does NOT support credentials.json — using env vars
+  credentials: {
+    type: process.env.TYPE,
+    project_id: process.env.PROJECT_ID,
+    private_key_id: process.env.PRIVATE_KEY_ID,
+    private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
+    client_email: process.env.CLIENT_EMAIL,
+    client_id: process.env.CLIENT_ID,
+    token_uri: process.env.TOKEN_URI
+  }
 });
 
 let sheetsClient = null;
@@ -33,14 +52,14 @@ async function getAllValues() {
 }
 
 function findIdColumn(headers) {
-  const keys = ["badge", "batch", "roll"];  // ye teeno reference ke liye add ke h ,agar remove karno ho to kr lena//
+  const keys = ["badge", "batch", "roll"];
   for (let i = 0; i < headers.length; i++) {
     if (keys.some(k => (headers[i] || "").toLowerCase().includes(k))) return i;
   }
   return -1;
 }
 
-/* ---------- LOGIN ---------- */ //login handeler hai
+/* ---------- LOGIN ---------- */
 app.post("/api/login", async (req, res) => {
   const { userId } = req.body;
   if (!userId) return res.status(400).json({ error: "ID Required" });
@@ -70,7 +89,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-/* ---------- UPDATE + HIGHLIGHT + LOG ---------- */ // isko change nahi krna
+/* ---------- UPDATE + HIGHLIGHT + LOG ---------- */
 app.post("/api/update", async (req, res) => {
   const { rowIndex, updates, userId } = req.body;
   if (!rowIndex) return res.status(400).json({ error: "rowIndex required" });
@@ -153,5 +172,6 @@ app.post("/api/update", async (req, res) => {
   }
 });
 
+// ---------- START SERVER ----------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(` Server running on ${PORT}`));
